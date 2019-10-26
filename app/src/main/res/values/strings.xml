@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Emergency</string>
+    <string name="hello_world_from_imm">Hello World! From Imm</string>
+    <string name="sound_recorder">Accident Sound Recorder</string>
+    <string name="pause">Pause</string>
+    <string name="stop">Stop</string>
+    <string name="start">Start</string>
+</resources>
