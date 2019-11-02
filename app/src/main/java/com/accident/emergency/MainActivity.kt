@@ -1,194 +1,128 @@
 package com.accident.emergency
 
 import android.Manifest
-import android.annotation.SuppressLint
-import android.annotation.TargetApi
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
-import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
-import android.util.Log
-import android.view.View
-import android.widget.TextView
+import android.widget.Button
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.UploadTask
-import kotlinx.android.synthetic.main.activity_main.*
-import java.io.File
+import androidx.databinding.DataBindingUtil
+import com.accident.emergency.databinding.ActivityMainBinding
 import java.io.IOException
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-//import sun.jvm.hotspot.utilities.IntArray
-
-
-
-
 
 
 class MainActivity : AppCompatActivity() {
 
-    lateinit var output: String
-
-    //private var mediaRecorder: MediaRecorder? = null
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var playButton: Button
+    private lateinit var pauseButton: Button
+    private lateinit var stopButton: Button
     private lateinit var mediaRecorder: MediaRecorder
+    private lateinit var output: String
     private var state: Boolean = false
-    private var recordingStopped: Boolean = false
-    lateinit var uri : Uri
-    private val TAG = "EMERGENCY"
-    private val RECORD_REQUEST_CODE = 101
-    var permissionGranted = false
-    var storageRef = FirebaseStorage.getInstance().reference
-    lateinit var mediaFile:String
+    private var recordingPaused: Boolean = false
 
-
+    @RequiresApi(Build.VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
 
-       // output = Environment.getExternalStorageDirectory().absolutePath + "/recording.mp3"
-      //  var outputFile:File = File.createTempFile("stuff","more")
-       // output = Environment.DIRECTORY_DCIM
-//        output  = File(this.filesDir, "recording.mp3").toString()
-        val sep = File.separator // Use this instead of hardcoding the "/"
-        val newFolder = "Music"
-        val extStorageDirectory = Environment.getExternalStorageState()
-        val myNewFolder = File(extStorageDirectory + sep + newFolder)
-        myNewFolder.mkdir()
-        mediaFile = (Environment.getExternalStorageDirectory().toString()
-                + sep + newFolder + sep + "myRecordings.mp3")
+        binding = DataBindingUtil.setContentView(this,R.layout.activity_main)
+        playButton = binding.startBtn
+        pauseButton = binding.pauseBtn
+        stopButton = binding.stopBtn
         mediaRecorder = MediaRecorder()
+        output = Environment.getExternalStorageDirectory().absolutePath + "/recording.mp3"
+
+        setUpMediaRecorder()
 
 
 
-        button_start_recording.setOnClickListener { startRecording() }
+        //Disable Pause and Stop Button
+        pauseButton.isEnabled = false
+        stopButton.isEnabled = false
 
-        button_stop_recording.setOnClickListener { stopRecording() }
-
-        button_pause_recording.setOnClickListener { pauseRecording() }
-
-
-    }
-
-    private fun setupPermissions() {
-        val permission = ContextCompat.checkSelfPermission(this,
-            Manifest.permission.RECORD_AUDIO)
-
-        if (permission != PackageManager.PERMISSION_GRANTED) {
-            Log.i(TAG, "Permission to record denied")
-            makeRequest()
-
-        }
-    }
-
-    private fun setupfilePermission(){
-        val permission =  ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-
-        if (permission != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "you dont have file permition", Toast.LENGTH_SHORT).show()
-            makeFileRequest()
-        }else{
-            Toast.makeText(this, "you have file permition but something else is wrong", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private  fun makeFileRequest(){
-        ActivityCompat.requestPermissions(this,
-        arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE, android.Manifest.permission.READ_EXTERNAL_STORAGE),
-            RECORD_REQUEST_CODE)
-
-    }
-
-    private fun makeRequest() {
-        ActivityCompat.requestPermissions(this,
-            arrayOf(Manifest.permission.RECORD_AUDIO),
-            RECORD_REQUEST_CODE)
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        when (requestCode) {
-            RECORD_REQUEST_CODE -> {
-
-                if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-
-                    Log.i(TAG, "Permission has been denied by user")
-                } else {
-                    Log.i(TAG, "Permission has been granted by user")
-                    permissionGranted = true
-                }
+        playButton.setOnClickListener {
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                val permissions = arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE)
+                ActivityCompat.requestPermissions(this, permissions,0)
+            } else {
+                startRecording()
             }
         }
+
+        pauseButton.setOnClickListener { pauseRecording() }
+        stopButton.setOnClickListener { stopRecording() }
+
     }
 
-    private fun startRecording() {
-
+    private fun setUpMediaRecorder() {
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC)
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
         mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-        mediaRecorder.setOutputFile(mediaFile)
+        mediaRecorder.setOutputFile(output)
+    }
 
-            state = true
-            Toast.makeText(this, "Recording started!", Toast.LENGTH_SHORT).show()
+    private fun startRecording() {
+        binding.pauseBtn.isEnabled = true
+        binding.stopBtn.isEnabled = true
+        state = true
         try {
             mediaRecorder.prepare()
             mediaRecorder.start()
+            Toast.makeText(this, "Recording started!", Toast.LENGTH_SHORT).show()
         } catch (e: IllegalStateException) {
             e.printStackTrace()
         } catch (e: IOException) {
             e.printStackTrace()
         }
-//        start()
+
     }
 
-    private fun stopRecording(){
-        if(state){
-            mediaRecorder.stop()
-            mediaRecorder.release()
-            state = false
-        }else{
-            Toast.makeText(this, "You are not recording right now!", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-
-
-    @SuppressLint("RestrictedApi", "SetTextI18n")
-    @TargetApi(Build.VERSION_CODES.N)
-    private fun pauseRecording() {
-        if(state) {
-            if(!recordingStopped){
-                Toast.makeText(this,"Stopped!", Toast.LENGTH_SHORT).show()
+    @RequiresApi(Build.VERSION_CODES.N)
+    private fun pauseRecording(){
+        if (state){
+            if (!recordingPaused){
                 mediaRecorder.pause()
-                recordingStopped = true
-                button_pause_recording.text = "Resume"
+                Toast.makeText(this,"Recording Paused!",Toast.LENGTH_SHORT).show()
+                binding.pauseBtn.text = getString(R.string.resume_text)
+                recordingPaused = true
+
             }else{
-                //resumeRecording()
+                resumeRecording()
             }
         }
     }
 
-    @SuppressLint("RestrictedApi", "SetTextI18n")
-    @TargetApi(Build.VERSION_CODES.N)
+    @RequiresApi(Build.VERSION_CODES.N)
     private fun resumeRecording() {
-        Toast.makeText(this,"Resume!", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this,"Resumed Recording!",Toast.LENGTH_SHORT).show()
         mediaRecorder.resume()
-        button_pause_recording.text = "Pause"
-        recordingStopped = false
+        binding.pauseBtn.text = getString(R.string.pause_text)
+        recordingPaused = false
     }
 
-    override fun onStart() {
-        super.onStart()
-        setupPermissions()
-        setupfilePermission()
+
+    private fun stopRecording(){
+        if (state){
+            Toast.makeText(this,"Recording Stopped!",Toast.LENGTH_SHORT).show()
+            mediaRecorder.stop()
+            mediaRecorder.release()
+            state = false
+        }
     }
+
+
 }
+
+
+
+
+

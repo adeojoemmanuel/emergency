@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<layout>
 <RelativeLayout
 xmlns:android="http://schemas.android.com/apk/res/android"
 xmlns:tools="http://schemas.android.com/tools"
@@ -28,7 +29,7 @@ tools:context=".MainActivity">
         />
 
 <Button
-    android:id="@+id/button_start_recording"
+    android:id="@+id/start_btn"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:text="@string/start"
@@ -38,7 +39,7 @@ tools:context=".MainActivity">
     android:layout_centerVertical="true"/>
 
 <Button
-    android:id="@+id/button_pause_recording"
+    android:id="@+id/pause_btn"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:text="@string/pause"
@@ -47,7 +48,7 @@ tools:context=".MainActivity">
     android:layout_marginBottom="32dp"/>
 
     <Button
-        android:id="@+id/button_stop_recording"
+        android:id="@+id/stop_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Stop"
@@ -56,3 +57,4 @@ tools:context=".MainActivity">
         android:layout_marginBottom="32dp"
         android:layout_marginRight="32dp"/>
 </RelativeLayout>
+</layout>

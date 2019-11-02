@@ -5,4 +5,6 @@
     <string name="pause">Pause</string>
     <string name="stop">Stop</string>
     <string name="start">Start</string>
+    <string name="resume_text">Resume</string>
+    <string name="pause_text">Pause</string>
 </resources>
